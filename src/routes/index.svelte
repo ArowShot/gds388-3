@@ -8,6 +8,13 @@
 		background: white;
 		opacity: .5;
 	}
+
+    .icon {
+        width: 1.25rem;
+        height: 1.25rem;
+        display: inline-block;
+        vertical-align: text-top;
+    }
 </style>
 
 <script context="module">
@@ -19,6 +26,8 @@
 </script>
 
 <script>
+	import IoIosArrowUp from 'svelte-icons/io/IoIosArrowUp.svelte'
+	import IoIosArrowDown from 'svelte-icons/io/IoIosArrowDown.svelte'
 	import { NotificationDisplay, notifier } from '@beyonk/svelte-notifications/src/index.js'
 	import GameInfo from '../components/GameInfo.svelte'
 
@@ -42,6 +51,7 @@
 		loading = false
 		if(res.ok) {
 			games = [...games, json]
+			sortBy()
 			notifier.info(`Added ${json.title}`)
 			event.target.gameTitle.value = ''
 			event.target.gameGenre.value = ''
@@ -55,11 +65,41 @@
 		console.log(event)
 		console.log(games.filter(game => game._id != event.detail._id))
 		games = games.filter(game => game._id != event.detail._id);
+		//sortBy()
+	}
+
+	let currentSort = 'none'
+	let sortReversed = false
+	function sortBy(sort) {
+		if(sort) {
+			if(sort == currentSort) {
+				sortReversed = !sortReversed
+			} else {
+				sortReversed = false
+			}
+			currentSort = sort
+		}
+
+		if(currentSort != 'none') {
+			games = games.sort((a, b) => {
+				var propA = a[currentSort].toUpperCase();
+				var propB = b[currentSort].toUpperCase();
+				if (propA < propB) {
+					return sortReversed ? 1 : -1;
+				}
+				if (propA > propB) {
+					return sortReversed ? -1 : 1;
+				}
+				return 0;
+			})
+		}
+		showSort = false
 	}
 
 	export let loading = false
 	export let games
 
+	let showSort = false
 	let gameEntry
 	let notif
 </script>
@@ -92,6 +132,55 @@
 	{/if}
 </div>
 
+<div class="dropdown" style="margin-bottom: 20px">
+  <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" on:click={() => {showSort = !showSort}}>
+    Sort by
+  </button>
+  <div class="dropdown-menu" class:show='{showSort}' aria-labelledby="dropdownMenuButton">
+    <a class="dropdown-item" class:show={showSort} on:click={() => sortBy('title')} href="#">
+		Title
+		{#if currentSort == 'title'}
+			{#if sortReversed}
+				<span class="icon">
+					<IoIosArrowUp/>
+				</span>
+			{:else}
+				<span class="icon">
+					<IoIosArrowDown/>
+				</span>
+			{/if}
+		{/if}
+	</a>
+    <a class="dropdown-item" class:show={showSort} on:click={() => sortBy('genre')} href="#">
+		Genre
+		{#if currentSort == 'genre'}
+			{#if sortReversed}
+				<span class="icon">
+					<IoIosArrowUp/>
+				</span>
+			{:else}
+				<span class="icon">
+					<IoIosArrowDown/>
+				</span>
+			{/if}
+		{/if}
+	</a>
+    <a class="dropdown-item" class:show={showSort} on:click={() => sortBy('description')} href="#">
+		Description
+		{#if currentSort == 'description'}
+			{#if sortReversed}
+				<span class="icon">
+					<IoIosArrowUp/>
+				</span>
+			{:else}
+				<span class="icon">
+					<IoIosArrowDown/>
+				</span>
+			{/if}
+		{/if}
+	</a>
+  </div>
+</div>
 <div class="list-group">
 	{#each games as game}
 		<GameInfo {...game} on:delete={deleteGame}/>
